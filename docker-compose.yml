@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgis/postgis:13-3.1
+    environment:
+      POSTGRES_DB: gis
+      POSTGRES_USER: docker
+      POSTGRES_PASSWORD: docker
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: stephen.byrne@tudublin.ie  # Change this to your admin email
+      PGADMIN_DEFAULT_PASSWORD: hello25  # Change this to a strong password
+    ports:
+      - "5050:80"  # Exposes pgAdmin on localhost:5050
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/pgadmin4/servers.json  # Optional: predefined server connection config
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./location:/app
+      - ./secret_key.txt:/etc/secret_key.txt:ro
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_NAME=gis
+      - DATABASE_USER=docker
+      - DATABASE_PASSWORD=docker
+      - DATABASE_HOST=db
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
+  pgadmin_data:
